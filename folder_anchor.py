@@ -126,7 +126,12 @@ def ln(link_to: str, link_name: str):
         os.symlink(link_to, link_name)
         print(link_name, "->", link_to)
     except FileExistsError as fee:
-        if os.path.realpath(os.readlink(link_name)) != os.path.realpath(link_to):
+        path_of_old_link = os.path.realpath(os.readlink(link_name))
+        if path_of_old_link != os.path.realpath(link_to):
+            if os.path.exists(path_of_old_link):
+                print("Tried to link", link_name, "to", link_to,
+                      "but it already points to", path_of_old_link)
+                return
             os.unlink(link_name)
             os.symlink(link_to, link_name)
             print(link_name, "->", link_to, "(updated)")
