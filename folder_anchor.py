@@ -93,11 +93,9 @@ def get_anchors(smart_link_files: list):
         if "anchor" in data:
             for anchor_data in make_list(data["anchor"]):
                 anchor = Anchor(data=anchor_data, path=data["path"])
-                if anchor.get_name() in anchor_files:
-                    print("Multiple anchors of the same name!", data["path"],
-                          anchor.get_name())
-                else:
-                    anchor_files[anchor.get_name()] = anchor
+                if anchor.get_name() not in anchor_files:
+                    anchor_files[anchor.get_name()] = []
+                anchor_files[anchor.get_name()].append(anchor)
     return anchor_files
 
 
@@ -148,7 +146,8 @@ def process_files(folder_anchor_datas):
             print("Could not find anchor", auto_link.get_anchor_name(), "for",
                   auto_link.get_origin_path())
             continue
-        create_link(auto_link, anchors[auto_link.get_anchor_name()])
+        for anchor in anchors[auto_link.get_anchor_name()]:
+            create_link(auto_link, anchor)
 
 
 if __name__ == "__main__":
