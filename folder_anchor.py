@@ -59,7 +59,7 @@ def create_link(auto_link_to: AutoLinkTo, anchor: Anchor):
 
     # The link target has to be relative to its position
     link_target = os.path.relpath(auto_link_to.get_origin_path(), os.path.dirname(link))
-
+    create_parent_directories(link)
     ln(link_to=link_target, link_name=link)
 
 
@@ -111,7 +111,7 @@ def get_auto_links(smart_link_files: list):
     return auto_links
 
 
-def _create_parent_directories(target):
+def create_parent_directories(target):
     if not os.path.exists(os.path.dirname(target)):
         try:
             os.makedirs(os.path.dirname(target))
@@ -132,22 +132,6 @@ def ln(link_to: str, link_name: str):
             os.unlink(link_name)
             os.symlink(link_to, link_name)
             print(link_name, "->", link_to, "(updated)")
-
-
-def process_anchor(smart_link, auto_link_to, anchors):
-    anchor_name = auto_link_to["anchor"]
-    if anchor_name not in anchors:
-        print("Anchor", anchor_name, "not found for", smart_link["path"])
-        return
-    anchor = anchors[anchor_name]
-    target = anchor.get_path()
-    if "subdir" in auto_link_to:
-        target = os.path.join(target, auto_link_to["subdir"])
-    target = os.path.join(target, smart_link["name"])
-    _create_parent_directories(target)
-    src = os.path.relpath(smart_link["path"], os.path.dirname(target))
-    dst = target
-    ln(link_to=src, link_name=dst)
 
 
 def make_list(l):
