@@ -129,6 +129,9 @@ def create_parent_directories(target):
 
 
 def ln(link_to: str, link_name: str):
+    if not os.path.exists(link_to):
+        print("Tried to create broken link", link_name, "->", link_to)
+        return
     if os.path.realpath(link_to) == os.path.realpath(link_name):
         # The folder itself is at the position. No need to create link.
         return
@@ -193,7 +196,7 @@ if __name__ == "__main__":
     parser.add_argument('--name', help='Name of the link (if different from folder name)')
     parser.add_argument('--file', metavar="./FILE", dest="file",
                         help="Don't like to the folder but this file.")
-    parser.add_argument('--scan', dest="scan", metavar="PATH",
+    parser.add_argument('-s', '--scan', dest="scan", metavar="PATH",
                         help="Scans the directory and adds missing symbolic links.")
     parser.add_argument('-l', '--list_anchors', dest="list_anchors", metavar="PATH",
                         help="Lists all anchors")
