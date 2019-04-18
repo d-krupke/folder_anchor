@@ -32,10 +32,19 @@ class AutoLinkTo:
         return self._get_entry("subdir")
 
     def get_name(self):
-        return self._get_entry("name")
+        if "name" in self._link_data:
+            return self._link_data["name"]
+        if "file" in self._link_data:
+            return os.path.basename(self._link_data["file"])
+        if "name" in self._parent_data:
+            return self._parent_data["name"]
+        return None
 
     def get_origin_path(self):
-        return self._parent_data["path"]
+        path = self._parent_data["path"]
+        if "file" in self._link_data:
+            path = os.path.join(path, self._link_data["file"])
+        return path
 
 
 class Anchor:
@@ -158,19 +167,23 @@ def process_files(folder_anchor_datas):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="TODO")
     parser.add_argument('--create_anchor', help="Create anchor")
-    parser.add_argument('--create_smart_link', help="Create smart link")
+    parser.add_argument('--create_auto_link', help="Create smart link")
     parser.add_argument('--subdir')
+    parser.add_argument('--name')
     parser.add_argument('--scan')
     args = parser.parse_args()
     if args.create_anchor:
         with open(FILE_NAME, "w") as f:
             f.write("{\"anchor\":{\"name\": \"" + args.create_anchor + "\"}}")
-    if args.create_smart_link:
+    if args.create_auto_link:
         with open(FILE_NAME, "w") as f:
             subdir = ""
             if args.subdir:
                 subdir = ", \"subdir\":\"" + args.subdir + "\""
+            name = ""
+            if args.name:
+                name = ", \"name\":\""+args.name+"\""
             f.write(
-                "{\"auto_link_to\":{\"anchor\": \"" + args.create_smart_link + "\"" + subdir + "}}")
+                "{\"auto_link_to\":{\"anchor\": \"" + args.create_auto_link + "\"" + subdir + "}"+name+"}")
     if args.scan:
         process_files(find_smart_link_files(os.path.expanduser(args.scan)))
