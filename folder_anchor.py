@@ -10,9 +10,9 @@ class AnchorFile:
     pass
 
 
-class AutoLinkTo:
-    def __init__(self, auto_link_to_data, file_data):
-        self._link_data = auto_link_to_data
+class MakePartOf:
+    def __init__(self, make_part_of_data, file_data):
+        self._link_data = make_part_of_data
         self._parent_data = file_data
 
     def _get_entry(self, entry):
@@ -58,15 +58,15 @@ class Anchor:
         return self._path
 
 
-def create_link(auto_link_to: AutoLinkTo, anchor: Anchor):
-    if auto_link_to.get_subdir():
-        link = os.path.join(anchor.get_path(), auto_link_to.get_subdir(),
-                            auto_link_to.get_name())
+def create_link(make_part_of: MakePartOf, anchor: Anchor):
+    if make_part_of.get_subdir():
+        link = os.path.join(anchor.get_path(), make_part_of.get_subdir(),
+                            make_part_of.get_name())
     else:
-        link = os.path.join(anchor.get_path(), auto_link_to.get_name())
+        link = os.path.join(anchor.get_path(), make_part_of.get_name())
 
     # The link target has to be relative to its position
-    link_target = os.path.relpath(auto_link_to.get_origin_path(), os.path.dirname(link))
+    link_target = os.path.relpath(make_part_of.get_origin_path(), os.path.dirname(link))
     create_parent_directories(link)
     ln(link_to=link_target, link_name=link)
 
@@ -116,9 +116,9 @@ def get_anchors(smart_link_files: list):
 def get_auto_links(smart_link_files: list):
     auto_links = []
     for data in smart_link_files:
-        if "auto_link_to" in data:
-            for auto_link_to_data in make_list(data["auto_link_to"]):
-                alt = AutoLinkTo(auto_link_to_data=auto_link_to_data, file_data=data)
+        if "make_part_of" in data:
+            for make_part_of_data in make_list(data["make_part_of"]):
+                alt = MakePartOf(make_part_of_data=make_part_of_data, file_data=data)
                 auto_links.append(alt)
     return auto_links
 
@@ -189,8 +189,10 @@ if __name__ == "__main__":
                     "https://github.com/d-krupke/folder_anchor for more.")
     parser.add_argument('-a', '--anchor', metavar="ANCHOR_NAME", dest="anchor",
                         help="Create anchor")
-    parser.add_argument('-t', '--auto_link_to', metavar="ANCHOR_NAME",
-                        dest="auto_link_to", help="Link to anchor")
+    parser.add_argument('-p', '--make_part_of', metavar="ANCHOR_NAME",
+                        dest="make_part_of",
+                        help="Make this folder a part of an anchor folder by creating"
+                             " a symbolic link in it")
     parser.add_argument('--subdir', metavar="./PATH", dest="subdir",
                         help="Creates a subdir at the corresponding anchor")
     parser.add_argument('--name', help='Name of the link (if different from folder name)')
@@ -202,7 +204,7 @@ if __name__ == "__main__":
                         help="Lists all anchors")
     args = parser.parse_args()
 
-    if args.anchor or args.auto_link_to:
+    if args.anchor or args.make_part_of:
         data = parse_json(FILE_NAME) if os.path.exists(FILE_NAME) else None
         if not data:
             data = dict()
@@ -213,19 +215,19 @@ if __name__ == "__main__":
             else:
                 data["anchor"] = []
             data["anchor"].append({"name": args.anchor})
-        if args.auto_link_to:
-            if "auto_link_to" in data:
-                data["auto_link_to"] = make_list(data["auto_link_to"])
+        if args.make_part_of:
+            if "make_part_of" in data:
+                data["make_part_of"] = make_list(data["make_part_of"])
             else:
-                data["auto_link_to"] = []
-            auto_link_to = {"anchor": args.auto_link_to}
+                data["make_part_of"] = []
+            make_part_of = {"anchor": args.make_part_of}
             if args.subdir:
-                auto_link_to["subdir"] = args.subdir
+                make_part_of["subdir"] = args.subdir
             if args.name:
-                auto_link_to["name"] = args.name
+                make_part_of["name"] = args.name
             if args.file:
-                auto_link_to["file"] = args.file
-            data["auto_link_to"].append(auto_link_to)
+                make_part_of["file"] = args.file
+            data["make_part_of"].append(make_part_of)
 
         with open(FILE_NAME, "w") as f:
             f.write(json.dumps(data))

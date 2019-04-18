@@ -23,7 +23,7 @@ in the corresponding directory. Such a link can look
 as follows:
 ```json
 {"anchor": [{"name": "my_anchor"}, {"name": "alternative_name"}], 
-"auto_link_to": [{"anchor": "some_other_anchor", "subdir": "create_a_subdir_with_this_name"},
+"make_part_of": [{"anchor": "some_other_anchor", "subdir": "create_a_subdir_with_this_name"},
                  {"anchor":  "yet_another_anchor", "name": "name_this_link_differently", 
                  "file": "dont_link_to_the_folder_but_to_this_file"}],
 "name": "default_name_of_link"}
@@ -33,7 +33,7 @@ as follows:
 
 ```
 usage: folder_anchor.py [-h] [-a,--anchor ANCHOR_NAME]
-                        [-t,--auto_link_to ANCHOR_NAME] [--subdir ./PATH]
+                        [-t,--make_part_of ANCHOR_NAME] [--subdir ./PATH]
                         [--name NAME] [--file ./FILE] [--scan PATH]
                         [-l,--list_anchors PATH]
 
@@ -45,7 +45,7 @@ optional arguments:
   -h, --help            show this help message and exit
   -a,--anchor ANCHOR_NAME
                         Create anchor
-  -t,--auto_link_to ANCHOR_NAME
+  -t,--make_part_of ANCHOR_NAME
                         Link to anchor
   --subdir ./PATH       Creates a subdir at the corresponding anchor
   --name NAME           Name of the link (if different from folder name)
@@ -87,11 +87,11 @@ Assume you have a folder with latex templates and you want to create a
 link named 'latex_templates' in every folder that has the anchor 'latex_project'.
 For this you execute in your template folder
 ```
-folder_anchor.py --auto_link_to latex_project --name latex_templates
+folder_anchor.py --make_part_of latex_project --name latex_templates
 ```
 This creates the file
 ```json
-{"auto_link_to": [{"anchor": "latex_project", "name": "latex_templates"}]}
+{"make_part_of": [{"anchor": "latex_project", "name": "latex_templates"}]}
 ``` 
 
 Note that `--name` is optional (default is the original folder name).
