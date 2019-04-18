@@ -4,7 +4,7 @@ import json
 import os
 
 FILE_NAME = ".folder_anchor.json"
-
+DRY_RUN = False
 
 class AnchorFile:
     pass
@@ -140,20 +140,23 @@ def update_ln(link_to: str, link_name: str):
             print("Tried to link", link_name, "->", link_to,
                   "but it already points to", path_of_old_link)
             return
-        os.unlink(link_name)
-        os.symlink(link_to, link_name)
+        if not DRY_RUN:
+            os.unlink(link_name)
+            os.symlink(link_to, link_name)
         print("Updated:", link_name, "->", link_to)
 
 
 def ln(link_to: str, link_name: str):
-    if not os.path.exists(link_to):
+    full_link_destination = os.path.join(os.path.dirname(link_name), link_to )
+    if not os.path.exists(full_link_destination):
         print("Tried to create broken link", link_name, "->", link_to)
         return
-    if os.path.realpath(link_to) == os.path.realpath(link_name):
+    if os.path.realpath(full_link_destination) == os.path.realpath(link_name):
         # The folder itself is at the position. No need to create link.
         return
     try:
-        os.symlink(link_to, link_name)
+        if not DRY_RUN:
+            os.symlink(link_to, link_name)
         print("Created:", link_name, "->", link_to)
     except FileExistsError as fee:
         update_ln(link_to, link_name)
@@ -208,7 +211,11 @@ if __name__ == "__main__":
                         help="Scans the directory and adds missing symbolic links.")
     parser.add_argument('-l', '--list_anchors', dest="list_anchors", metavar="PATH",
                         help="Lists all anchors")
+    parser.add_argument('--dry', action="store_true", help="Dry run. Print changes but don't make them.")
     args = parser.parse_args()
+
+    if args.dry:
+        DRY_RUN = True
 
     if args.anchor or args.make_part_of:
         data = parse_json(FILE_NAME) if os.path.exists(FILE_NAME) else None
