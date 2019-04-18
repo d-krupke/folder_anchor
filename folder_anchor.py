@@ -10,7 +10,7 @@ class AnchorFile:
     pass
 
 
-class MakePartOf:
+class MakePartOfAnchorRequest:
     def __init__(self, make_part_of_data, file_data):
         self._link_data = make_part_of_data
         self._parent_data = file_data
@@ -58,7 +58,7 @@ class Anchor:
         return self._path
 
 
-def create_link(make_part_of: MakePartOf, anchor: Anchor):
+def create_link(make_part_of: MakePartOfAnchorRequest, anchor: Anchor):
     if make_part_of.get_subdir():
         link = os.path.join(anchor.get_path(), make_part_of.get_subdir(),
                             make_part_of.get_name())
@@ -81,7 +81,7 @@ def parse_json(path: str):
     return None
 
 
-def read_smart_link_file(path: str):
+def parse_folder_anchor_file(path: str):
     data = parse_json(path)
     if data:
         data["path"] = os.path.dirname(path)
@@ -90,15 +90,15 @@ def read_smart_link_file(path: str):
     return data
 
 
-def find_smart_link_files(base_dir="."):
-    smart_link_files = []
+def find_folder_anchor_files(base_dir="."):
+    folder_anchor_files = []
     for root, dirs, files in os.walk(base_dir, topdown=False):
         path = os.path.join(root, FILE_NAME)
         if os.path.isfile(path):
-            data = read_smart_link_file(path)
+            data = parse_folder_anchor_file(path)
             if data:
-                smart_link_files.append(data)
-    return smart_link_files
+                folder_anchor_files.append(data)
+    return folder_anchor_files
 
 
 def get_anchors(smart_link_files: list):
@@ -113,12 +113,13 @@ def get_anchors(smart_link_files: list):
     return anchor_files
 
 
-def get_auto_links(smart_link_files: list):
+def get_auto_links(make_part_of_files: list):
     auto_links = []
-    for data in smart_link_files:
+    for data in make_part_of_files:
         if "make_part_of" in data:
             for make_part_of_data in make_list(data["make_part_of"]):
-                alt = MakePartOf(make_part_of_data=make_part_of_data, file_data=data)
+                alt = MakePartOfAnchorRequest(make_part_of_data=make_part_of_data,
+                                              file_data=data)
                 auto_links.append(alt)
     return auto_links
 
@@ -126,6 +127,22 @@ def get_auto_links(smart_link_files: list):
 def create_parent_directories(target):
     if not os.path.exists(os.path.dirname(target)):
         os.makedirs(os.path.dirname(target))
+
+
+def update_ln(link_to: str, link_name: str):
+    if not os.path.islink(link_name):
+        print("Tried to create to create link", link_name, "->", link_to,
+              "but there exists already a file/folder with the same name")
+        return
+    path_of_old_link = os.path.realpath(os.readlink(link_name))
+    if path_of_old_link != os.path.realpath(link_to):
+        if os.path.exists(path_of_old_link):
+            print("Tried to link", link_name, "->", link_to,
+                  "but it already points to", path_of_old_link)
+            return
+        os.unlink(link_name)
+        os.symlink(link_to, link_name)
+        print("Updated:", link_name, "->", link_to)
 
 
 def ln(link_to: str, link_name: str):
@@ -139,19 +156,7 @@ def ln(link_to: str, link_name: str):
         os.symlink(link_to, link_name)
         print("Created:", link_name, "->", link_to)
     except FileExistsError as fee:
-        if not os.path.islink(link_name):
-            print("Tried to create to create link", link_name, "->", link_to,
-                  "but there exists already a file/folder with the same name")
-            return
-        path_of_old_link = os.path.realpath(os.readlink(link_name))
-        if path_of_old_link != os.path.realpath(link_to):
-            if os.path.exists(path_of_old_link):
-                print("Tried to link", link_name, "->", link_to,
-                      "but it already points to", path_of_old_link)
-                return
-            os.unlink(link_name)
-            os.symlink(link_to, link_name)
-            print("Updated:", link_name, "->", link_to)
+        update_ln(link_to, link_name)
 
 
 def make_list(l):
@@ -173,7 +178,7 @@ def process_files(folder_anchor_datas):
 
 
 def print_anchors(path: str):
-    anchors = get_anchors(find_smart_link_files(path))
+    anchors = get_anchors(find_folder_anchor_files(path))
     for anchor, data in anchors.items():
         print(anchor, ":", end="\t")
         for d in data:
@@ -197,7 +202,8 @@ if __name__ == "__main__":
                         help="Creates a subdir at the corresponding anchor")
     parser.add_argument('--name', help='Name of the link (if different from folder name)')
     parser.add_argument('--file', metavar="./FILE", dest="file",
-                        help="Don't like to the folder but this file.")
+                        help="Don't link to the folder but this file "
+                             "(file can also be another folder).")
     parser.add_argument('-s', '--scan', dest="scan", metavar="PATH",
                         help="Scans the directory and adds missing symbolic links.")
     parser.add_argument('-l', '--list_anchors', dest="list_anchors", metavar="PATH",
@@ -236,4 +242,4 @@ if __name__ == "__main__":
         print_anchors(args.list_anchors)
 
     if args.scan:
-        process_files(find_smart_link_files(os.path.expanduser(args.scan)))
+        process_files(find_folder_anchor_files(os.path.expanduser(args.scan)))
