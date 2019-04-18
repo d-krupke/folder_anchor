@@ -120,11 +120,7 @@ def get_auto_links(smart_link_files: list):
 
 def create_parent_directories(target):
     if not os.path.exists(os.path.dirname(target)):
-        try:
-            os.makedirs(os.path.dirname(target))
-        except OSError as exc:  # Guard against race condition
-            if exc.errno != errno.EEXIST:
-                raise
+        os.makedirs(os.path.dirname(target))
 
 
 def ln(link_to: str, link_name: str):
@@ -133,17 +129,21 @@ def ln(link_to: str, link_name: str):
         return
     try:
         os.symlink(link_to, link_name)
-        print(link_name, "->", link_to)
+        print("Created:", link_name, "->", link_to)
     except FileExistsError as fee:
+        if not os.path.islink(link_name):
+            print("Tried to create to create link", link_name, "->", link_to,
+                  "but there exists already a file/folder with the same name")
+            return
         path_of_old_link = os.path.realpath(os.readlink(link_name))
         if path_of_old_link != os.path.realpath(link_to):
             if os.path.exists(path_of_old_link):
-                print("Tried to link", link_name, "to", link_to,
+                print("Tried to link", link_name, "->", link_to,
                       "but it already points to", path_of_old_link)
                 return
             os.unlink(link_name)
             os.symlink(link_to, link_name)
-            print(link_name, "->", link_to, "(updated)")
+            print("Updated:", link_name, "->", link_to)
 
 
 def make_list(l):
@@ -182,8 +182,8 @@ if __name__ == "__main__":
                 subdir = ", \"subdir\":\"" + args.subdir + "\""
             name = ""
             if args.name:
-                name = ", \"name\":\""+args.name+"\""
+                name = ", \"name\":\"" + args.name + "\""
             f.write(
-                "{\"auto_link_to\":{\"anchor\": \"" + args.create_auto_link + "\"" + subdir + "}"+name+"}")
+                "{\"auto_link_to\":{\"anchor\": \"" + args.create_auto_link + "\"" + subdir + "}" + name + "}")
     if args.scan:
         process_files(find_smart_link_files(os.path.expanduser(args.scan)))

@@ -25,3 +25,20 @@ the symbolic links to match the description.
                  "file": "dont_link_to_the_folder_but_to_this_file"}],
 "name": "default_name_of_link"}
 ```
+
+### Why not allow regular expressions?
+
+It is useful to link some folder (for example templates) to all projects
+of a specific kind. However, since it is possible for a project folder to
+have multiple anchor names, there is no need for this. Just add a corresponding
+additional anchor to all the corresponding projects. There is also no harm
+in overlapping definitions if they have the same result (the tool will 
+automatically detect this).
+
+### Does the tool overwrite any files with a wrong configuration?
+
+No, the tool never deletes any files or folders. This also means you
+have to take care of removing broken links. This is possible with
+`find -L $MY_DIRECTORY -type l -exec rm -- {} +`.
+When creating new symbolic links, only broken links are allowed to be overwritten.
+Otherwise, a warning is printed.
