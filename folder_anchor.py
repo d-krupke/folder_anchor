@@ -1,6 +1,5 @@
-# !/usr/bin/python
+# !/usr/bin/python3
 import argparse
-import errno
 import json
 import os
 
@@ -72,17 +71,23 @@ def create_link(auto_link_to: AutoLinkTo, anchor: Anchor):
     ln(link_to=link_target, link_name=link)
 
 
-def read_smart_link_file(path: str):
+def parse_json(path: str):
     try:
         with open(path, "r") as f:
             data = json.load(f)
-            data["path"] = os.path.dirname(path)
-            if "name" not in data:
-                data["name"] = data["path"].split("/")[-1]
             return data
     except Exception as e:
-        print("Could not read smart link", path, e)
+        print("Could not parse", path, e)
     return None
+
+
+def read_smart_link_file(path: str):
+    data = parse_json(path)
+    if data:
+        data["path"] = os.path.dirname(path)
+        if "name" not in data:
+            data["name"] = data["path"].split("/")[-1]
+    return data
 
 
 def find_smart_link_files(base_dir="."):
@@ -164,26 +169,66 @@ def process_files(folder_anchor_datas):
             create_link(auto_link, anchor)
 
 
+def print_anchors(path: str):
+    anchors = get_anchors(find_smart_link_files(path))
+    for anchor, data in anchors.items():
+        print(anchor, ":", end="\t")
+        for d in data:
+            print(d.get_path(), end=" ")
+        print()
+
+
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="TODO")
-    parser.add_argument('--create_anchor', help="Create anchor")
-    parser.add_argument('--create_auto_link', help="Create smart link")
-    parser.add_argument('--subdir')
-    parser.add_argument('--name')
-    parser.add_argument('--scan')
+    parser = argparse.ArgumentParser(
+        description="folder_anchor is a tool for automatically"
+                    "creating symbolic links based on local"
+                    "json configuration files. See "
+                    "https://github.com/d-krupke/folder_anchor for more.")
+    parser.add_argument('-a', '--anchor', metavar="ANCHOR_NAME", dest="anchor",
+                        help="Create anchor")
+    parser.add_argument('-t', '--auto_link_to', metavar="ANCHOR_NAME",
+                        dest="auto_link_to", help="Link to anchor")
+    parser.add_argument('--subdir', metavar="./PATH", dest="subdir",
+                        help="Creates a subdir at the corresponding anchor")
+    parser.add_argument('--name', help='Name of the link (if different from folder name)')
+    parser.add_argument('--file', metavar="./FILE", dest="file",
+                        help="Don't like to the folder but this file.")
+    parser.add_argument('--scan', dest="scan", metavar="PATH",
+                        help="Scans the directory and adds missing symbolic links.")
+    parser.add_argument('-l', '--list_anchors', dest="list_anchors", metavar="PATH",
+                        help="Lists all anchors")
     args = parser.parse_args()
-    if args.create_anchor:
-        with open(FILE_NAME, "w") as f:
-            f.write("{\"anchor\":{\"name\": \"" + args.create_anchor + "\"}}")
-    if args.create_auto_link:
-        with open(FILE_NAME, "w") as f:
-            subdir = ""
+
+    if args.anchor or args.auto_link_to:
+        data = parse_json(FILE_NAME) if os.path.exists(FILE_NAME) else None
+        if not data:
+            data = dict()
+
+        if args.anchor:
+            if "anchor" in data:
+                data["anchor"] = make_list(data["anchor"])
+            else:
+                data["anchor"] = []
+            data["anchor"].append({"name": args.anchor})
+        if args.auto_link_to:
+            if "auto_link_to" in data:
+                data["auto_link_to"] = make_list(data["auto_link_to"])
+            else:
+                data["auto_link_to"] = []
+            auto_link_to = {"anchor": args.auto_link_to}
             if args.subdir:
-                subdir = ", \"subdir\":\"" + args.subdir + "\""
-            name = ""
+                auto_link_to["subdir"] = args.subdir
             if args.name:
-                name = ", \"name\":\"" + args.name + "\""
-            f.write(
-                "{\"auto_link_to\":{\"anchor\": \"" + args.create_auto_link + "\"" + subdir + "}" + name + "}")
+                auto_link_to["name"] = args.name
+            if args.file:
+                auto_link_to["file"] = args.file
+            data["auto_link_to"].append(auto_link_to)
+
+        with open(FILE_NAME, "w") as f:
+            f.write(json.dumps(data))
+
+    if args.list_anchors:
+        print_anchors(args.list_anchors)
+
     if args.scan:
         process_files(find_smart_link_files(os.path.expanduser(args.scan)))
