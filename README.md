@@ -125,3 +125,8 @@ have to take care of removing broken links. This is possible with
 `find -L $MY_DIRECTORY -type l -exec rm -- {} +`.
 When creating new symbolic links, only broken links are allowed to be overwritten.
 Otherwise, a warning is printed.
+
+
+### Is there a dry run option?
+
+Yes, simply add the parameter `--dry` to get the changes printed without actually performing them.
