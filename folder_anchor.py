@@ -1,4 +1,4 @@
-# !/usr/bin/python3
+#!/usr/bin/env python3
 import argparse
 import json
 import os
@@ -40,7 +40,7 @@ class MakePartOfAnchorRequest:
         return None
 
     def get_origin_path(self):
-        path = self._parent_data["path"]
+        path = self._parent_data["link_path"]
         if "file" in self._link_data:
             path = os.path.join(path, self._link_data["file"])
         return path
@@ -65,7 +65,7 @@ def create_link(make_part_of: MakePartOfAnchorRequest, anchor: Anchor):
     else:
         link = os.path.join(anchor.get_path(), make_part_of.get_name())
 
-    # The link target has to be relative to its position
+    # The link_name link_target has to be relative to its position
     link_target = os.path.relpath(make_part_of.get_origin_path(), os.path.dirname(link))
     create_parent_directories(link)
     ln(link_to=link_target, link_name=link)
@@ -84,9 +84,9 @@ def parse_json(path: str):
 def parse_folder_anchor_file(path: str):
     data = parse_json(path)
     if data:
-        data["path"] = os.path.dirname(path)
+        data["link_path"] = os.path.dirname(path)
         if "name" not in data:
-            data["name"] = data["path"].split("/")[-1]
+            data["name"] = data["link_path"].split("/")[-1]
     return data
 
 
@@ -106,7 +106,7 @@ def get_anchors(smart_link_files: list):
     for data in smart_link_files:
         if "anchor" in data:
             for anchor_data in make_list(data["anchor"]):
-                anchor = Anchor(data=anchor_data, path=data["path"])
+                anchor = Anchor(data=anchor_data, path=data["link_path"])
                 if anchor.get_name() not in anchor_files:
                     anchor_files[anchor.get_name()] = []
                 anchor_files[anchor.get_name()].append(anchor)
@@ -131,13 +131,13 @@ def create_parent_directories(target):
 
 def update_ln(link_to: str, link_name: str):
     if not os.path.islink(link_name):
-        print("Tried to create to create link", link_name, "->", link_to,
+        print("Tried to create to create link_name", link_name, "->", link_to,
               "but there exists already a file/folder with the same name")
         return
     path_of_old_link = os.path.realpath(os.readlink(link_name))
     if path_of_old_link != os.path.realpath(link_to):
         if os.path.exists(path_of_old_link):
-            print("Tried to link", link_name, "->", link_to,
+            print("Tried to link_name", link_name, "->", link_to,
                   "but it already points to", path_of_old_link)
             return
         if not DRY_RUN:
@@ -149,10 +149,10 @@ def update_ln(link_to: str, link_name: str):
 def ln(link_to: str, link_name: str):
     full_link_destination = os.path.join(os.path.dirname(link_name), link_to )
     if not os.path.exists(full_link_destination):
-        print("Tried to create broken link", link_name, "->", link_to)
+        print("Tried to create broken link_name", link_name, "->", link_to)
         return
     if os.path.realpath(full_link_destination) == os.path.realpath(link_name):
-        # The folder itself is at the position. No need to create link.
+        # The folder itself is at the position. No need to create link_name.
         return
     try:
         if not DRY_RUN:
@@ -192,7 +192,7 @@ def print_anchors(path: str):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description="folder_anchor is a tool for automatically"
-                    "creating symbolic links based on local"
+                    "creating symbolic _links based on local"
                     "json configuration files. See "
                     "https://github.com/d-krupke/folder_anchor for more.")
     parser.add_argument('-a', '--anchor', metavar="ANCHOR_NAME", dest="anchor",
@@ -200,17 +200,17 @@ if __name__ == "__main__":
     parser.add_argument('-p', '--make_part_of', metavar="ANCHOR_NAME",
                         dest="make_part_of",
                         help="Make this folder a part of an anchor folder by creating"
-                             " a symbolic link in it")
+                             " a symbolic link_name in it")
     parser.add_argument('--subdir', metavar="./PATH", dest="subdir",
                         help="Creates a subdir at the corresponding anchor")
-    parser.add_argument('--name', help='Name of the link (if different from folder name)')
+    parser.add_argument('--name', help='Name of the link_name (if different from folder name)')
     parser.add_argument('--file', metavar="./FILE", dest="file",
-                        help="Don't link to the folder but this file "
+                        help="Don't link_name to the folder but this file "
                              "(file can also be another folder).")
     parser.add_argument('-s', '--scan', dest="scan", metavar="PATH",
-                        help="Scans the directory and adds missing symbolic links.")
+                        help="Scans the directory and adds missing symbolic _links.")
     parser.add_argument('-l', '--list_anchors', dest="list_anchors", metavar="PATH",
-                        help="Lists all anchors")
+                        help="Lists all _anchors")
     parser.add_argument('--dry', action="store_true", help="Dry run. Print changes but don't make them.")
     args = parser.parse_args()
 
